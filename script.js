@@ -1,95 +1,109 @@
 const keys = {
   ArrowUp: {
-    move: () => playerPosition.y < 3 && playerPosition.y++,
+    move: () => playerPosition.y++,
+    condition: () => playerPosition.y < 3,
     score: 20,
   },
   ArrowLeft: {
-    move: () => playerPosition.x > 0 && playerPosition.x--,
+    move: () => playerPosition.x--,
+    condition: () => playerPosition.x > 0,
     score: 50,
   },
   ArrowDown: {
-    move: () => playerPosition.y > 0 && playerPosition.y--,
+    move: () => playerPosition.y--,
+    condition: () => playerPosition.y > 0,
     score: 90,
   },
   ArrowRight: {
-    move: () => playerPosition.x < 3 && playerPosition.x++,
+    move: () => playerPosition.x++,
+    condition: () => playerPosition.x < 3,
     score: 70,
   },
 };
 
-const penality = 25;
-let locationHistory = [];
+const stepbackPenality = 25;
 const distance = 50;
-const divPlayer = document.querySelector(".player");
+let playerLocationHistory = [];
+const playerDiv = document.getElementById("player");
 const playerPosition = {
   y: 0,
   x: 0,
 };
+const initialPlayerPosition = playerPositionFormatted();
 let playerIsMoving = false;
 let playerScore = 0;
-movePlayer(playerPosition);
-saveLocationHistory();
+movePlayerDiv(playerPosition);
+savePlayerLocationHistory();
 
 document.addEventListener("keydown", handleKeyDown);
 
 function handleKeyDown(e) {
   e.preventDefault();
-  const { key } = e;
-  if (key in keys) {
-    handleArrowKey(key);
+  if (e.key in keys) {
+    handleArrowKey(e.key);
   }
 }
 
 function handleArrowKey(key) {
-  if (!checkPlayerCanMove(key)) {
+  if (!canPlayerMove(key)) {
     return;
   }
-
-  movePlayer(playerPosition);
-  handlePlayerIsMoving();
-
+  changePlayerPosition(key);
+  movePlayerDiv(playerPosition);
+  preventPlayerMoveThenAllowAfterDelay(500);
   handlePlayerScore(key);
-
-  saveLocationHistory();
+  if (playerPositionFormatted() == initialPlayerPosition) {
+    resetPlayerScoreAndLocationHistory();
+  }
+  console.log("playerScore", playerScore);
+  savePlayerLocationHistory();
 }
 
-function checkPlayerCanMove(key) {
-  if (playerIsMoving === true) {
+function canPlayerMove(key) {
+  if (playerIsMoving) {
     return false;
   }
-  if (keys[key].move() === false) {
+  if (keys[key].condition === false) {
     return false;
   }
   return true;
 }
 
-function handlePlayerIsMoving() {
+function changePlayerPosition(key) {
+  keys[key].move();
+}
+
+function preventPlayerMoveThenAllowAfterDelay(delay) {
   playerIsMoving = true;
   setTimeout(() => {
     playerIsMoving = false;
-  }, 500);
+  }, delay);
 }
 
 function handlePlayerScore(key) {
-  if (locationHistory.includes(playerPositionFormatted())) {
-    playerScore -= penality;
+  if (playerHasStepBack()) {
+    playerScore -= stepbackPenality;
   }
   playerScore += keys[key].score;
-  if (playerPositionFormatted() == "0,0") {
-    playerScore = 0;
-    locationHistory = [];
-  }
-  console.log("playerScore", playerScore);
 }
 
-function movePlayer({ x, y }) {
-  divPlayer.style.bottom = y * distance + "px";
-  divPlayer.style.left = x * distance + "px";
+function resetPlayerScoreAndLocationHistory() {
+  playerScore = 0;
+  playerLocationHistory = [];
+}
+
+function playerHasStepBack() {
+  return playerLocationHistory.includes(playerPositionFormatted());
+}
+
+function movePlayerDiv({ x, y }) {
+  playerDiv.style.bottom = y * distance + "px";
+  playerDiv.style.left = x * distance + "px";
   console.log("x", x, "y", y);
 }
 
-function saveLocationHistory() {
-  locationHistory.push(playerPositionFormatted());
+function savePlayerLocationHistory() {
+  playerLocationHistory.push(playerPositionFormatted());
 }
 
 function playerPositionFormatted() {
